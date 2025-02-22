@@ -6,6 +6,7 @@ const dotenv=require('dotenv');
 dotenv.config();
 const User=require('../models/user');
 const book=require('../models/book');
+const user = require('../models/user');
 
 
 exports.createuser=async(req,res,next)=>{
@@ -30,68 +31,45 @@ exports.createuser=async(req,res,next)=>{
 
 }
 
-exports.loginadmin=async(req, res, next)=>{
-    const{
-        name,
-        email,
-        password,
-       
-    }=req.body;
-    try{
-        if(!name || !email || !password){
-            return res.status(400).json({message:"All fields are required"});
-        }
-       const findUser=await User.findOne({email,role:"admin"});
-       if(!findUser){
-        return res.status(400).json({message:"user not found"});
-       }
-       const isPasswordValid=await bcrypt.compare(password,findUser.password);
-       if(!isPasswordValid){
-        return res.status(400).json({message:"invalid password"});
-       }
-       const role=admin;
-       const token=Jwt.sign({id:findUser._id,
-        name:findUser.name,
-        email:findUser.email,
-        role:"admin"},process.env.JWT_SECRET);
-        
-      
-       res.status(200).json({token,role:"admin",message:"admin logged in successfully"});
-       console.log(role);
-      
-       
-    }
-    catch(error){
-        next(error);
 
 
-    }
-}
 
-exports.verifyAdmin=(req, res, next)=>{
-    // token parse the user
-    const token=req.headers.authorization.split(" ")[1];
-    const decoded=Jwt.verify(token,process.env.JWT_SECRET);
-    req.user=decoded;
-    // check if user is admin or not
-    if(req.user.role==="admin"){
-        next();
-    }
 
-    else{
-        res.status(403).json({error:"Admin access denied"});
-    }
-}
+
+const adminname=process.env.ADMIN_NAME;
+const adminemail=process.env.ADMIN_EMAIL;
+const adminpassword=process.env.ADMIN_PASSWORD;
+const adminrole=process.env.ADMIN_ROLE;
+
+
+
 exports.login = async (req, res) => {
+
     const {name, email, password} = req.body;
 
     try {
         // Check if all fields are provided
-        if (!email || !password || !name) {
-            return res.status(400).json({
-                message: "All fields are required"
+        if (email===adminemail && password && adminpassword && name===adminname) {
+            const token = Jwt.sign(
+                {
+                    id: adminemail,
+                    name: adminname,
+                    email: adminemail,
+                    role: adminrole
+                }, 
+                process.env.JWT_SECRET,
+                { expiresIn: '24h' }
+            )
+            res.cookie('token', token, {
+                httpOnly: true,
+                secure: true,
+                sameSite: 'strict'
             });
-        }
+          res.status(200).json({message:`${adminrole} logged in successfully`,
+            redirectUrl:'/auth/admin',
+            role:adminrole});
+
+ }
 
         // Find user by email
         const user = await User.findOne({email});
@@ -121,12 +99,21 @@ exports.login = async (req, res) => {
             { expiresIn: '24h' }  // Token expires in 24 hours
         );
 
+res.cookie('token', token, {
+    httpOnly: true,
+    secure: true,
+    sameSite: 'strict'
+});
+
         // Send success response
-        res.status(200).json({
-            token,
-            role: user.role,
-            message: `${user.role} logged in successfully`
-        });
+       return res.status(200).json({
+            message: `${user.role} logged in successfully`,
+            redirectUrl : user.role === 'user' ? '/auth/student' : '/auth/admin',
+            role: user.role
+})
+       
+    
+       
     } catch (error) {
         console.error('Login error:', error);
         res.status(500).json({
@@ -137,6 +124,9 @@ exports.login = async (req, res) => {
 exports.veriffyUser=(req, res, next)=>{
     // token parse the user
     const token=req.headers.authorization.split(" ")[1];
+    if(!token){
+        return res.status(401).json({error:"token not found"});
+    }
     const decoded=Jwt.verify(token,process.env.JWT_SECRET);
     req.user=decoded;
     // check if user is admin or not
@@ -148,10 +138,24 @@ exports.veriffyUser=(req, res, next)=>{
         res.status(403).json({error:"User access denied"});
     }
 }
+exports.verifyAdmin=(req, res, next)=>{
+    // token parse the user
+    const token=req.headers.authorization.split(" ")[1];
+    const decoded=Jwt.verify(token,process.env.JWT_SECRET);
+    req.user=decoded;
+    // check if user is admin or not
+    if(req.user.role==="admin"){
+        next();
+    }
+
+    else{
+        res.status(403).json({error:"Admin access denied"});
+    }
+}
 
 exports.getusers=async(req,res)=>{
     try{
-        const users=await user.find({});
+        const users=await User.find({});
         res.status(200).json(users);
     }
     catch(error){
@@ -160,7 +164,7 @@ exports.getusers=async(req,res)=>{
 
 }
 exports.individualuser=async(req,res)=>{
-    const user=await user.findById(req.params.id);
+    const user=await User.findById(req.params.id);
     res.status(200).json(user);
 }
 
@@ -168,7 +172,7 @@ exports.individualuser=async(req,res)=>{
 
 exports.updateuser=async(req,res)=>{
     try{
-        const users=await user.findByIdAndUpdate(req.params.id,req.body,{new:true});
+        const users=await User.findByIdAndUpdate(req.params.id,req.body,{new:true});
         res.status(200).json(users);
     }
     catch(error){
@@ -178,7 +182,7 @@ exports.updateuser=async(req,res)=>{
 
 exports.deleteuser=async(req,res)=>{
     try{
-        const users=await user.findByIdAndDelete(req.params.id);
+        const users=await User.findByIdAndDelete(req.params.id);
         res.status(200).json(users);
     }
     catch(error){

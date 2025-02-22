@@ -11,8 +11,11 @@ const router= express.Router();
 
  
 
-router.post("/loginadmin",user.loginadmin);
+
 router.post("/createuser",user.createuser);
+
+
+
 
 router.post("/login",user.login);
 router.get("/getuser", user.verifyAdmin,

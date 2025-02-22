@@ -18,11 +18,12 @@ app.get("/signup", (req, res) => {
 app.get("/login", (req, res) => {
     res.render("auth/login");});
 
-app.get("/student", (req, res) => {
+app.get("/auth/student", (req, res) => {
     res.render("auth/student");
 });
-app.get("/book", (req, res) => {
-    res.render("auth/book")});
+app.get("/auth/admin", (req, res) => {
+    res.render("auth/admin");
+});
 
 
 

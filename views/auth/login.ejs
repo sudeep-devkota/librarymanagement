@@ -31,7 +31,7 @@
       <div id="errorMessage" class="error hidden"></div>
       <p>Admin? <a href="/loginadmin">Login here</a></p>
     </div>
-<script>
+<script >
     document.getElementById("userLoginForm").addEventListener("submit", async (e) => {
         e.preventDefault();
         const errorMessage = document.getElementById("errorMessage");
@@ -41,22 +41,7 @@ const name = document.querySelector('input[name="name"]').value.trim();
 const email = document.querySelector('input[type="email"]').value.trim();
 const password = document.querySelector('input[type="password"]').value.trim();
 
-   const adminname="sudeep";
-   const adminemail="sdueepdevkota639@gmail.com";
-   const adminpassword="sudeep123";
-
-   if (name === adminname && email === adminemail && password === adminpassword) {
-let user = {
-    role: admin
-};
-localStorage.setItem("token", JSON.stringify(user));
-        alert(`${user.role} logged in successfully!`);
-        window.location.href = "/book";  // Redirect admin
-        return;
-    }
-
-    
-        // If not admin, proceed with user login
+   
         try {
             const response = await fetch("/user/login", {
                 method: "POST",
@@ -73,17 +58,18 @@ localStorage.setItem("token", JSON.stringify(user));
             }
     
             // Store token
-            sessionStorage.setItem("token", data.token);
+          const id=data._id;
+           
+            localStorage.setItem("id",id);
+            localStorage.setItem("role",data.role);
+            localStorage.setItem("name",data.name);
+            alert(data.role);
     
-            // Redirect based on role
-            if (data.role === "user") {
-                alert(`${data.role} logged in successfully!`);
-                window.location.href = "/student"; 
-            } else if (data.role === "admin") {
-                alert(`${data.role} logged in successfully!`);
-                window.location.href = "/book";
+            //redirect according to requestur role
+            window.location.href=data.redirectUrl;
+               
             }
-        } catch (error) {
+         catch (error) {
             errorMessage.textContent = "Something went wrong. Please try again.";
             errorMessage.classList.remove("hidden");
             console.error("Login error:", error);
