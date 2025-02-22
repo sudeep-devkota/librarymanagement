@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Page</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css" integrity="sha512-Evv84Mr4kqVGRNSgIGL/F/aIDqQb7xQ2vcrdIwxfjThSH8CSR7PBEakCr51Ck+w+/U6swU2Im1vVX0SVk9ABhg==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+    <style>
+       
+        /* Basic Styling */
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+        }
+
+        form {
+            margin-bottom: 20px;
+        }
+
+        input, select {
+            display: block;
+            margin-bottom: 10px;
+            padding: 8px;
+            width: 100%;
+            max-width: 300px;
+        }
+
+        button {
+            padding: 10px 20px;
+            background-color: #28a745;
+            color: white;
+            border: none;
+            cursor: pointer;
+        }
+
+        button:hover {
+            background-color: #218838;
+        }
+
+        .book-list {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+            gap: 20px;
+        }
+
+        .book-card {
+            border: 1px solid #ccc;
+            border-radius: 8px;
+            padding: 16px;
+            background-color: #f9f9f9;
+        }
+
+        .error-message {
+            color: red;
+            margin-bottom: 10px;
+        }
+    </style>
+</head>
+<body>
+    <h1>Admin Page</h1>
+    <form id="bookForm">
+        <input type="text" name="title" placeholder="Title" required>
+        <input type="text" name="author" placeholder="Author" required>
+        <input type="text" name="genre" placeholder="Genre" required>
+        <input type="number" name="publication_year" placeholder="Publication Year" required>
+        <input type="number" name="copies_available" placeholder="Copies Available" required>
+        <input type="number" name="copies_issued" placeholder="Copies Issued" required>
+        <select name="book_status" required>
+            <option value="Available">Available</option>
+            <option value="Issued">Issued</option>
+        </select>
+        <button type="submit">Add Book</button>
+    </form>
+
+    <div id="errorMessage" class="error-message"></div>
+
+    <h2>Book List</h2>
+    <div class="book-list"></div>
+
+    <script>
+        const form = document.getElementById('bookForm');
+        const errorMessage = document.getElementById('errorMessage');
+
+        form.addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            const book = {
+                title: form.title.value,
+                author: form.author.value,
+                genre: form.genre.value,
+                publication_year: form.publication_year.value,
+                copies_available: form.copies_available.value,
+                copies_issued: form.copies_issued.value,
+                book_status: form.book_status.value
+            };
+
+            try {
+                const response = await fetch('/book/createbook', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(book)
+                });
+
+                const data = await response.json();
+
+                if (response.ok) {
+                    alert('Book created successfully');
+                    form.reset(); // Clear the form
+                    fetchBooks(); // Refresh the book list
+                } else {
+                    throw new Error(data.message || 'Book creation failed');
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                errorMessage.textContent = error.message || 'An error occurred while creating the book.';
+            }
+        });
+
+        async function fetchBooks() {
+            try {
+                const response = await fetch('/book/getallbooks');
+                if (!response.ok) {
+                    throw new Error('Failed to fetch books');
+                }
+
+                const books = await response.json();
+                const bookList = document.querySelector('.book-list');
+                bookList.innerHTML = '';
+
+                books.forEach((book) => {
+                    const bookDiv = document.createElement('div');
+                    bookDiv.className = 'book-card';
+                    bookDiv.innerHTML = `
+                        <h3>${book.title}</h3>
+                        <p>Author: ${book.author}</p>
+                        <p>Genre: ${book.genre}</p>
+                        <p>Publication Year: ${book.publication_year}</p>
+                        <p>Copies Available: ${book.copies_available}</p>
+                        <p>Copies Issued: ${book.copies_issued}</p>
+                        <p>Book Status: ${book.book_status}</p>
+                        <button onclick="editBook('${book._id}')"><i class="fas fa-edit"></i></button>
+                        <button onclick="deleteBook('${book._id}')"><i class="fas fa-trash"></i></button>
+                    `;
+                    bookList.appendChild(bookDiv);
+                });
+            } catch (error) {
+                console.error('Error fetching books:', error);
+                errorMessage.textContent = 'Failed to load books. Please try again later.';
+            }
+        }
+
+        // Fetch books when the page loads
+        fetchBooks();
+    </script>
+</body>
+</html>

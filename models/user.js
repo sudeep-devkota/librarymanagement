@@ -2,6 +2,7 @@ const express=require('express');
 const mongoose=require('mongoose');
 
 
+
 const userSchema = new mongoose.Schema({
     name: 
     { 
@@ -14,6 +15,7 @@ const userSchema = new mongoose.Schema({
          required: true,
           unique: true
          },
+
     password: 
     { type: String,
          required: true
@@ -23,7 +25,22 @@ const userSchema = new mongoose.Schema({
          enum: ['user', 'admin'],
          default: 'user'
         },
-   
+     
+        book:[{
+            
+            type: mongoose.Schema.Types.ObjectId,
+            ref: 'book',
+         borrow_date: { type: Date, default: Date.now },
+            returnStatus: { type: Boolean, default: false },
+       due_date: { type: Date, default: null },
+            fine:{type: Number, default: 0},
+           
+
+           
+           
+        }]
+
+        
   },
   
   {
@@ -33,3 +50,10 @@ const userSchema = new mongoose.Schema({
 );
   
   module.exports = mongoose.model("user", userSchema);
+  
+
+
+
+
+
+ 
