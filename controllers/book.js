@@ -20,6 +20,10 @@ try{
        return res.status(400).json({message:"All fields are required"});
     
    }
+   const existingBook=await book.findOne({title});
+   if(existingBook){
+       return res.status(400).json({message:"Book already exists"});
+   }
     const books=new book({
         title,
         author,

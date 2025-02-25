@@ -1,5 +1,6 @@
 const express=require('express');
 const mongoose=require('mongoose');
+const book = require('./book');
 
 
 
@@ -26,10 +27,10 @@ const userSchema = new mongoose.Schema({
          default: 'user'
         },
      
-        book:[{
+        borrowbook:[{
             
-            type: mongoose.Schema.Types.ObjectId,
-            ref: 'book',
+           book_id:{ type: mongoose.Schema.Types.ObjectId,
+            ref: 'book'},
          borrow_date: { type: Date, default: Date.now },
             returnStatus: { type: Boolean, default: false },
        due_date: { type: Date, default: null },

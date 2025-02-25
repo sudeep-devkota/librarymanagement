@@ -1,5 +1,8 @@
 const express = require("express");
+const cookieParser = require("cookie-parser");
 const app = express();
+app.use(cookieParser());
+
 const connectDB =require("./configuration/database");
 connectDB();
 
@@ -46,6 +49,7 @@ app.use("/book", bookRoute);
 const port = process.env.PORT || 5000;
 app.listen(port, () => {
     console.log(`server is running on localhost:${port}`);
+    console.log(`jwt secret is ${process.env.JWT_SECRET}`);
 });
 
 

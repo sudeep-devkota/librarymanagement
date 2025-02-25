@@ -6,7 +6,7 @@ const dotenv=require('dotenv');
 dotenv.config();
 const User=require('../models/user');
 const book=require('../models/book');
-const user = require('../models/user');
+
 
 
 exports.createuser=async(req,res,next)=>{
@@ -60,12 +60,9 @@ exports.login = async (req, res) => {
                 process.env.JWT_SECRET,
                 { expiresIn: '24h' }
             )
-            res.cookie('token', token, {
-                httpOnly: true,
-                secure: true,
-                sameSite: 'strict'
-            });
-          res.status(200).json({message:`${adminrole} logged in successfully`,
+            return res.status(200).json({
+            token,
+            message: `${adminrole} logged in successfully`,
             redirectUrl:'/auth/admin',
             role:adminrole});
 
@@ -96,18 +93,17 @@ exports.login = async (req, res) => {
                 role: user.role
             }, 
             process.env.JWT_SECRET,
-            { expiresIn: '24h' }  // Token expires in 24 hours
+            { expiresIn: '24h' }
+             // Token expires in 24 hours
         );
 
-res.cookie('token', token, {
-    httpOnly: true,
-    secure: true,
-    sameSite: 'strict'
-});
-
+        // Send token in response
+       
         // Send success response
        return res.status(200).json({
+            token,
             message: `${user.role} logged in successfully`,
+          
             redirectUrl : user.role === 'user' ? '/auth/student' : '/auth/admin',
             role: user.role
 })
@@ -116,17 +112,21 @@ res.cookie('token', token, {
        
     } catch (error) {
         console.error('Login error:', error);
-        res.status(500).json({
+        return res.status(500).json({
             message: "Server error. Please try again later."
         });
     }
 };
 exports.veriffyUser=(req, res, next)=>{
+    if(!req.headers.authorization || !req.headers.authorization.startsWith('Bearer ')){
+        return res.status(401).json({error:"token not found"});
+    }
     // token parse the user
     const token=req.headers.authorization.split(" ")[1];
     if(!token){
         return res.status(401).json({error:"token not found"});
     }
+    try{
     const decoded=Jwt.verify(token,process.env.JWT_SECRET);
     req.user=decoded;
     // check if user is admin or not
@@ -136,6 +136,11 @@ exports.veriffyUser=(req, res, next)=>{
 
     else{
         res.status(403).json({error:"User access denied"});
+    }
+    }
+    catch(error){
+        console.error("JWT Verification Error:", error);
+        res.status(401).json({ error: "Invalid or expired token" });
     }
 }
 exports.verifyAdmin=(req, res, next)=>{

@@ -1,57 +1,64 @@
-const express=require('express');
-const mongoose=require('mongoose');
-const borrow=require('../models/book');
-const user=require('../models/user');
+const Book = require("../models/book"); 
+const Borrow = require("../models/book"); // Make sure this model is correct
 
-exports.borrowbook=async(req,res)=>{
-    const {user_id,book_id}=req.body;
-    try{
-        if(!user_id || !book_id){
-            return res.status(400).json({message:"user_id and book_id are required"});
+exports.borrowBook = async (req, res) => {
+    try {
+        const { books } = req.body; // Array of book IDs
+
+        // Ensure user is authenticated
+        if (!req.user || !req.user.id) {
+            return res.status(401).json({ message: "Unauthorized. Please log in." });
         }
-        const user=await user.findById(user_id);
-        if(!user){
-            return res.status(400).json({message:"user not found"});
+        const userId = req.user.id;
+
+        // Validate request
+        if (!books || books.length === 0) {
+            return res.status(400).json({ message: "Please select at least one book to borrow." });
         }
-        const book=await book.findById(book_id);
-        if(!book){
-            return res.status(400).json({message:"book not found"});
 
+        const borrowedBooks = [];
 
+        // Process each book
+        for (const bookItem of books) {
+            const foundBook = await Book.findById(bookItem.book_id);
 
+            if (!foundBook) {
+                return res.status(404).json({ message: `Book with ID ${bookItem.book_id} not found.` });
+            }
+
+            if (foundBook.copies_available === 0) {
+                return res.status(400).json({ message: `Book "${foundBook.title}" is currently unavailable.` });
+            }
+
+            // Update book availability
+            foundBook.copies_available--;
+            foundBook.copies_issued++;
+            await foundBook.save();
+
+            borrowedBooks.push(foundBook);
+
+            // Create borrow record
+            const borrowDate = new Date();
+            const returnDate = new Date();
+            returnDate.setDate(borrowDate.getDate() + 7); // Set return date 7 days from now
+
+            const newBorrow = new Borrow({
+                user_id: userId,
+                book_id: bookItem.book_id,
+                borrow_date: borrowDate,
+                return_date: returnDate,
+                is_returned: false
+            });
+
+            await newBorrow.save();
         }
-        
 
-//set due date
-        const due_date=new Date(new Date().setDate(new Date().getDate()+7));
-        const borrow_date=new Date();
-
-       if(book.copies_available>0){
-        book.copies_available=book.copies_available-1;
-        book.copies_issued=book.copies_issued+1;
-   
-        user.book.push({book_id:book_id,
-            borrow_date:borrow_date,
-            due_date:borrow_date
-
+        res.status(200).json({
+            message: "Books borrowed successfully!",
+            books: borrowedBooks
         });
-        
 
-        await user.save();
-        await book.save();
-        return res.status(200).json({message:"book borrowed successfully",
-        user:user_id,
-        book:book_id,
-        borrow_date:borrow_date,
-        due_date:due_date
-        });
-       }
-       else{
-        return res.status(400).json({message:"book not available"});
-       }
+    } catch (error) {
+        res.status(500).json({ message: "Server error: " + error.message });
     }
-    catch(error){
-        res.status(400).json({message:error.message});
-    }
-}
-
+};

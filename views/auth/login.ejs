@@ -45,7 +45,9 @@ const password = document.querySelector('input[type="password"]').value.trim();
         try {
             const response = await fetch("/user/login", {
                 method: "POST",
-                headers: { "Content-Type": "application/json" },
+                headers: { "Content-Type": "application/json"
+
+                 },
                 body: JSON.stringify({ name, email, password }),
             });
     
@@ -56,14 +58,19 @@ const password = document.querySelector('input[type="password"]').value.trim();
                 errorMessage.classList.remove("hidden");
                 return;
             }
-    
-            // Store token
-          const id=data._id;
+    localStorage.setItem("token", data.token);
+   
+   
            
-            localStorage.setItem("id",id);
-            localStorage.setItem("role",data.role);
-            localStorage.setItem("name",data.name);
-            alert(data.role);
+           
+           
+         
+          
+
+           
+           
+          
+           
     
             //redirect according to requestur role
             window.location.href=data.redirectUrl;

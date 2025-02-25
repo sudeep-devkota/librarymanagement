@@ -9,6 +9,7 @@ const user=require('../controllers/user');
 
                                              
 router.post("/createbook",
+    user.verifyAdmin,
     
     
     book.createbook);
@@ -16,6 +17,8 @@ router.get("/getallbooks",book.getallbooks);
 
 router.post("/borrowbook",
     user.veriffyUser,
+   
+    
     borrow.borrowbook);
 
 
